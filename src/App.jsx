@@ -1,55 +1,63 @@
 import "./App.css";
 import React from "react";
-import Feedback from "./components/Feedback/Feedback";
-import Options from "./components/Options/Options";
-import Description from "./components/Description/Description";
-import Notification from "./components/Notifacation/Notification";
+import ContactFrom from "./components/ContactForm/ContactForm";
+import ContacList from "./components/ContactList/ContactList";
+import SearchForm from "./components/SearchBox/SearchBox";
 import { useState } from "react";
 import { useEffect } from "react";
+import * as Yup from "yup";
+import { Formik, Form, Field } from "formik";
+import initialContacts from "./contacts.json";
+import SearchBox from "./components/SearchBox/SearchBox";
+
+const contactsData = [
+  { id: "id-1", name: "Rosie Simpson", number: "459-12-56" },
+  { id: "id-2", name: "Hermione Kline", number: "443-89-12" },
+  { id: "id-3", name: "Eden Clements", number: "645-17-79" },
+  { id: "id-4", name: "Annie Copeland", number: "227-91-26" },
+];
+
 const App = () => {
-  const [reviews, setReviews] = useState(
-    JSON.parse(localStorage.getItem("reviews")) || {
-      good: 0,
-      neutral: 0,
-      bad: 0,
+  const [contact, setContact] = useState(() => {
+    const savedObject = window.localStorage.getItem("contacts");
+    if (savedObject !== null) {
+      return JSON.parse(savedObject);
     }
-  );
+    return contactsData;
+  });
+  const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
-    localStorage.setItem("reviews", JSON.stringify(reviews));
-  }, [reviews]);
+    window.localStorage.setItem("contacts", JSON.stringify(contact));
+  }, [contact]);
 
-  const updateFeedback = (feedbackType) => {
-    setReviews((prevReviews) => ({
-      ...prevReviews,
-      [feedbackType]: prevReviews[feedbackType] + 1,
-    }));
-  };
+  const filterContacts = contact.filter((contact) =>
+    contact.name.toLowerCase().includes(searchValue.toLowerCase())
+  );
 
-  const totalFeedback = reviews.good + reviews.neutral + reviews.bad;
-  const hasFeedback = totalFeedback > 0;
-  const positive = Math.round((reviews.good / totalFeedback) * 100);
-  const resetFeedback = () => {
-    setReviews({ good: 0, neutral: 0, bad: 0 });
-  };
+  function addContact(contactObj) {
+    setContact((prevValue) => {
+      return [...prevValue, contactObj];
+    });
+  }
+
+  function addFilter(currentFilter) {
+    setSearchValue(currentFilter);
+  }
+
+  function deleteContact(contactId) {
+    setContact((prevContact) =>
+      prevContact.filter((contact) => contact.id !== contactId)
+    );
+  }
 
   return (
-    <>
-      <Description />
-      <Options
-        firstButton="Good"
-        secondButton="Neutral"
-        thirdButton="Bad"
-        updateFeedback={updateFeedback}
-        totalFeedback={totalFeedback}
-        resetFeedback={resetFeedback}
-      />
-      {hasFeedback ? (
-        <Feedback reviews={reviews} total={totalFeedback} positive={positive} />
-      ) : (
-        <Notification />
-      )}
-    </>
+    <div>
+      <h1>Phonebook</h1>
+      <ContactFrom addContact={addContact} />
+      <SearchBox value={searchValue} addFilter={addFilter} />
+      <ContacList contacts={filterContacts} onDelete={deleteContact} />
+    </div>
   );
 };
 
